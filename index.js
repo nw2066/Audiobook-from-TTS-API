@@ -36,6 +36,6 @@ const client = new TextToSpeechClient({
   
   // Example usage:
   const textToSpeak = "This is a long text that will be converted to an MP3 file.";
-  const outputFile = 'long_audio.mp3';
+  const outputFile = 'output\\test.mp3';
   
   synthesizeSpeech(textToSpeak, outputFile);
