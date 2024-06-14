@@ -133,6 +133,21 @@ async function getChapterPageLocations(filePath, chapterStartRegex = /^\n\n\d+/)
 
 }
 
+/**
+ * Retrieves the total number of characters in a PDF file.
+ *
+ * @param {string} filePath - The path to the PDF file.
+ * @return {Promise<number>} A Promise that resolves to the total number of characters in the PDF.
+ */
+async function getCharsOfPDF(filePath) {
+    extractTextFromPDF(filePath).then((text) => {
+        console.log(text.length);
+    })
+}
+
+
+getCharsOfPDF(getInputPath()).catch(err => console.error('Error getting total number of characters:', err));
+
 //getChapterPageLocations(getInputPath()).catch(err => console.error('Error getting chapter page locations:', err));
 
 //splitPDF(getInputPath(),6,179).catch(err => console.error('Error splitting PDF:', err));
