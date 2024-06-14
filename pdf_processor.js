@@ -15,7 +15,6 @@ const fs = require('fs');
  * @param {boolean} [includePaths=false] - Flag to include additional paths in the output filename.
  * @return {string} The filename of the split PDF.
  */
-
 async function splitPDF(sourcePath, startPage,endPage=startPage,outputPath='temp',  includePaths=false) {
     const dataBuffer = fs.readFileSync(sourcePath);
     const sourcePDF = await PDFDocument.load(dataBuffer);
@@ -46,7 +45,7 @@ async function splitPDF(sourcePath, startPage,endPage=startPage,outputPath='temp
 
     const outputFilename = `${outputPath + "\\" + (includePaths ? "/" + path.basename(sourcePath, '.pdf') +_pg : "" ) + startPage + ( startPage !== endPage ? '-' + endPage : '' )}.pdf`;
     fs.writeFileSync(outputFilename, pdfBytes);
-    console.log(`Pages ${startPage}${startPage !== endPage ? '-' + endPage : ''} saved successfully.`);
+    //console.log(`Pages ${startPage}${startPage !== endPage ? '-' + endPage : ''} saved successfully.`);
     return outputFilename;
 
 }
@@ -58,7 +57,6 @@ async function splitPDF(sourcePath, startPage,endPage=startPage,outputPath='temp
  * @return {string} The path of the first PDF file found.
  * @throws {Error} If no PDF files are found in the input location.
  */
-
 function getInputPath(inputLocation = 'input') {
     let files = fs.readdirSync(inputLocation);
     let pdfFiles = files.filter(file => path.extname(file) === '.pdf');
@@ -90,10 +88,10 @@ async function extractTextFromPDF(filePath) {
  * Retrieves the page numbers of chapters from a PDF file.
  *
  * @param {string} filePath - The path to the PDF file.
- * @return {Promise<Array<number>>} A Promise that resolves to an array of page numbers indicating the start of each chapter.
- * @throws {Error} If there is an error reading the PDF file or extracting the text.
+ * @param {RegExp} [chapterStartRegex=/^\n\n\d+/] - The regular expression used to identify the start of a chapter.
+ * @return {Promise<void>} A Promise that resolves when the page numbers of chapters are retrieved and saved to 'chapters.csv'.
+ * @throws {Error} If there is an error reading the PDF file, extracting the text, or deleting a temporary file.
  */
-
 async function getChapterPageLocations(filePath, chapterStartRegex = /^\n\n\d+/) {
     
     const dataBuffer = fs.readFileSync(filePath);
@@ -103,14 +101,13 @@ async function getChapterPageLocations(filePath, chapterStartRegex = /^\n\n\d+/)
     // Check the text of each page against the chapterStartRegex
     // If the text matches the chapterStartRegex, add the page number to the pageNumbers array
     // Delete the temporary file after we're done
-    // Returns the pageNumbers array
+    // Writes chapter page numbers to 'chapters.csv'
 
     let chapterPageNums = [];
 
     for (let i = 1; i <= sourcePDF.getPageCount(); i++) {
         let tempPath = await splitPDF(filePath,i)    
 
-        console.log(tempPath);
         // Read the text of the temporary file at tempPath
         const text = await extractTextFromPDF(tempPath);
 
@@ -136,7 +133,7 @@ async function getChapterPageLocations(filePath, chapterStartRegex = /^\n\n\d+/)
 
 }
 
-getChapterPageLocations(getInputPath()).catch(err => console.error('Error getting chapter page locations:', err));
+//getChapterPageLocations(getInputPath()).catch(err => console.error('Error getting chapter page locations:', err));
 
 //splitPDF(getInputPath(),6,179).catch(err => console.error('Error splitting PDF:', err));
 

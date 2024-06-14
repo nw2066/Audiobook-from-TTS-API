@@ -12,7 +12,7 @@ const client = new TextToSpeechClient({
 
   
   // Function to synthesize speech
-  async function synthesizeSpeech(text, outputFilename) {
+async function synthesizeSpeech(text, outputFilename) {
     // Construct the request
     const request = {
       input: { text: text },
@@ -32,10 +32,22 @@ const client = new TextToSpeechClient({
     // Write the audio content to a file
     fs.writeFileSync(outputFilename, response.audioContent);
     console.log(`Audio saved to ${outputFilename}`);
-  }
-  
+}
+
+
+// write a getvoices function
+async function getVoices() {
+    const [voices] = await client.listVoices();
+    console.log(voices);
+}
+
+
+
+
   // Example usage:
   const textToSpeak = "This is a long text that will be converted to an MP3 file.";
   const outputFile = 'output\\test.mp3';
   
-  synthesizeSpeech(textToSpeak, outputFile);
+  getVoices();
+
+  //synthesizeSpeech(textToSpeak, outputFile);
