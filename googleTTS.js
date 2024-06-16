@@ -17,9 +17,9 @@ async function synthesizeSpeech(text, outputFilename) {
     const request = {
       input: { text: text },
       voice: {
-        languageCode: 'en-US', // Specify the language code
-        name: 'en-US-Standard-A', // Choose a voice (see documentation for options)
-        ssmlGender: 'MALE', // Optional: Specify gender
+        languageCode: 'en-GB	', // Specify the language code
+        name: 'en-GB-News-G', // Choose a voice (see documentation for options)
+        ssmlGender: 'FEMALE', // Optional: Specify gender
       },
       audioConfig: {
         audioEncoding: 'MP3', // Output format
@@ -50,7 +50,7 @@ async function getVoices() {
   
   //getVoices();
 
-  synthesizeSpeech(textToSpeak, outputFile);
+  //synthesizeSpeech(textToSpeak, outputFile);
 
 
   module.exports = {
