@@ -123,6 +123,8 @@ async function getChapterPageLocations(filePath, chapterStartRegex = /^\n\n\d+/)
     
     }
 
+    chapterPageNums.push(sourcePDF.getPageCount());
+
     console.log(chapterPageNums);
 
     let csvContent = "chapter,page\n";
@@ -148,7 +150,7 @@ async function getCharsOfPDF(filePath) {
 
 //getCharsOfPDF(getInputPath()).catch(err => console.error('Error getting total number of characters:', err));
 
-//getChapterPageLocations(getInputPath()).catch(err => console.error('Error getting chapter page locations:', err));
+getChapterPageLocations(getInputPath()).catch(err => console.error('Error getting chapter page locations:', err));
 
 // splitPDF(getInputPath(),72).catch(err => console.error('Error splitting PDF:', err));
 
