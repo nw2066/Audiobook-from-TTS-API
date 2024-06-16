@@ -1,6 +1,7 @@
 const { match } = require('assert');
 const { exec } = require('child_process');
 const fs = require('fs');
+const path = require('path');
 
 /**
  * Combines multiple MP3 files into a single MP3 file.
@@ -56,9 +57,23 @@ function getMP3Duration(filePath) {
     return match;
 }
 
+function getMP3List(sourceDir,startNum,endNum=startNum) {
+    let list = [];
+    for (let i = startNum; i <= endNum; i++) {
+        const fileName = path.join(sourceDir, `${i}.mp3`);
+        if (fs.existsSync(fileName)) {
+            list.push(fileName);
+        } else {
+            throw new Error(`File not found: ${fileName}`);
+        }
+    }
+    return list;
+}
 
 // Example usage:
 const mp3Files = ['temp\\Counter-Clock World (Philip K. Dick)\\pages\\1.mp3', 'temp\\Counter-Clock World (Philip K. Dick)\\pages\\2.mp3'];
 const outputPath = 'comblinedPages.mp3';
+console.log(getMP3List('temp\\Counter-Clock World (Philip K. Dick)\\pages', 1, 3))
+
 //combineMP3Files(mp3Files, outputPath);
 //getMP3Duration(outputPath)
