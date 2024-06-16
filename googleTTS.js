@@ -48,6 +48,13 @@ async function getVoices() {
   const textToSpeak = "This is a long text that will be converted to an MP3 file.";
   const outputFile = 'output\\test.mp3';
   
-  getVoices();
+  //getVoices();
 
-  //synthesizeSpeech(textToSpeak, outputFile);
+  synthesizeSpeech(textToSpeak, outputFile);
+
+
+  module.exports = {
+    client,
+    synthesizeSpeech,
+    getVoices
+};

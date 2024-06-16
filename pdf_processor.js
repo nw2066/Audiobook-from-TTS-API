@@ -146,10 +146,21 @@ async function getCharsOfPDF(filePath) {
 }
 
 
-getCharsOfPDF(getInputPath()).catch(err => console.error('Error getting total number of characters:', err));
+//getCharsOfPDF(getInputPath()).catch(err => console.error('Error getting total number of characters:', err));
 
 //getChapterPageLocations(getInputPath()).catch(err => console.error('Error getting chapter page locations:', err));
 
-//splitPDF(getInputPath(),6,179).catch(err => console.error('Error splitting PDF:', err));
+// splitPDF(getInputPath(),72).catch(err => console.error('Error splitting PDF:', err));
 
-// extractTextFromPDF("temp\\72.pdf").catch(err => console.error('Error extracting text:', err)); 
+// extractTextFromPDF("temp\\72.pdf")
+//     .then(text => console.log(text))
+//     .catch(err => console.error('Error extracting text:', err)); 
+
+
+module.exports = {
+    getInputPath,
+    getCharsOfPDF,
+    getChapterPageLocations,
+    splitPDF,
+    extractTextFromPDF
+}
