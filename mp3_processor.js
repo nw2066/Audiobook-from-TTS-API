@@ -1,3 +1,4 @@
+const { match } = require('assert');
 const { exec } = require('child_process');
 const fs = require('fs');
 
@@ -31,8 +32,33 @@ function combineMP3Files(mp3Files, outputPath) {
     console.log(`MP3 files combined successfully into ${outputPath}`);
   });
 }
+/**
+ * Gets and prints the duration of an MP3 file.
+ * @param {string} filePath - Path to the MP3 file.
+ */
+function getMP3Duration(filePath) {
+    const command = `ffmpeg -i ${filePath} -f null -`;
+  
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error: ${error.message}`);
+        return;
+      }
+      // Extract duration from the stderr output
+      const match = /Duration: (\d{2}:\d{2}:\d{2}\.\d{2})/.exec(stderr);
+      if (match) {
+        //console.log(`Duration of the combined MP3 file: ${match[1]}`);
+        return match;
+      } else {
+        console.error('Failed to retrieve MP3 duration.');
+      }
+    });
+    return match;
+}
+
 
 // Example usage:
 const mp3Files = ['temp\\Counter-Clock World (Philip K. Dick)\\pages\\1.mp3', 'temp\\Counter-Clock World (Philip K. Dick)\\pages\\2.mp3'];
 const outputPath = 'comblinedPages.mp3';
-combineMP3Files(mp3Files, outputPath);
+//combineMP3Files(mp3Files, outputPath);
+//getMP3Duration(outputPath)
