@@ -93,46 +93,40 @@ async function extractTextFromPDF(filePath) {
  * @throws {Error} If there is an error reading the PDF file, extracting the text, or deleting a temporary file.
  */
 async function getChapterPageLocations(filePath, chapterStartRegex = /^\n\n\d+/) {
-    
     const dataBuffer = fs.readFileSync(filePath);
     const sourcePDF = await PDFDocument.load(dataBuffer);
 
-    // Split the PDF file into a temporary file for each page
-    // Check the text of each page against the chapterStartRegex
-    // If the text matches the chapterStartRegex, add the page number to the pageNumbers array
-    // Delete the temporary file after we're done
-    // Writes chapter page numbers to 'chapters.csv'
-
-    let chapterPageNums = [];
+    let chapterStarts = [];
 
     for (let i = 1; i <= sourcePDF.getPageCount(); i++) {
-        let tempPath = await splitPDF(filePath,i)    
+        let tempPath = await splitPDF(filePath, i); // Assuming splitPDF is implemented elsewhere
 
-        // Read the text of the temporary file at tempPath
-        const text = await extractTextFromPDF(tempPath);
+        const text = await extractTextFromPDF(tempPath); // Assuming extractTextFromPDF is implemented elsewhere
 
-        // Check if the text matches the chapterStartRegex
         if (chapterStartRegex.test(text)) {
-            // If it does, add the page number to the pageNumbers array
-            chapterPageNums.push(i);
+            chapterStarts.push(i);
         }
 
-        // Delete the temporary file
         fs.unlinkSync(tempPath);
-
-    
     }
 
-    chapterPageNums.push(sourcePDF.getPageCount());
+    // Add the last page as the end of the last chapter
+    chapterStarts.push(sourcePDF.getPageCount() + 1);
 
-    console.log(chapterPageNums);
+    let chapters = {};
+    for (let i = 0; i < chapterStarts.length - 1; i++) {
+        let chapterName = `chapter${i+1}`;
+        chapters[chapterName] = [];
 
-    let csvContent = "chapter,page\n";
-    for(let i = 0; i < chapterPageNums.length; i++){
-        csvContent += (i+1) + "," + chapterPageNums[i] + "\n";
+        for (let j = chapterStarts[i]; j < chapterStarts[i+1]; j++) {
+            chapters[chapterName].push(j);
+        }
     }
-    fs.writeFileSync('chapters.csv', csvContent);
 
+    // Save the chapters as a JSON file
+    fs.writeFileSync('chapters.json', JSON.stringify(chapters, null, 2));
+
+    console.log(chapters);
 }
 
 /**
