@@ -116,4 +116,4 @@ const outputPath = 'comblinedPages.mp3';
 //combineMP3Files(mp3Files, outputPath);
 //getMP3Duration(outputPath)
 
-compileChapters("")
+compileChapters("temp\\Counter-Clock World (Philip K. Dick)")
