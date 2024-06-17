@@ -119,7 +119,7 @@ async function getChapterPageLocations(filePath, chapterStartRegex = /^\n\n\d+/)
         chapters[chapterName] = [];
 
         for (let j = chapterStarts[i]; j < chapterStarts[i+1]; j++) {
-            chapters[chapterName].push(j);
+            chapters[chapterName].push(`${j}.mp3`);
         }
     }
 
