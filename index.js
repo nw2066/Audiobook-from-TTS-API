@@ -30,7 +30,6 @@ const getMP3Pages= async (sourcePath, startPage,endPage=startPage,outputPath=pat
         fs.mkdirSync(outputPath, { recursive: true });
     }
 
-    const pagesToGetFilePath = await splitPDF(sourcePath, startPage, endPage);
 
     const dataBuffer = fs.readFileSync(pagesToGetFilePath);
     const sourcePDF = await PDFDocument.load(dataBuffer);
@@ -38,9 +37,9 @@ const getMP3Pages= async (sourcePath, startPage,endPage=startPage,outputPath=pat
     // Split the PDF file into a temporary file for each page
     // Generate mp3 for each page
 
-    for (let i = 1; i <= sourcePDF.getPageCount(); i++) {
+    for (let i = startPage; (i <= sourcePDF.getPageCount()) || (i <= endPage); i++) {
         
-        let pagePath = await splitPDF(pagesToGetFilePath,i)    
+        let pagePath = await splitPDF(sourcePath,i)    
 
         //generate mp3 for each page
         await getMP3FromPage(pagePath,outputPath);
@@ -58,7 +57,7 @@ const testCode = async () => {
 // console.group(pageplace);
 // console.log(await getMP3FromPage(pageplace,"pages"))
 
-    getMP3Pages(getInputPath(),1,3)
+    getMP3Pages(getInputPath(),4,174)
 
 }
 

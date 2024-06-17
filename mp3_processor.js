@@ -58,21 +58,17 @@ function getMP3Duration(filePath) {
     return match;
 }
 
-function getMP3List(sourceDir,startNum,endNum=startNum) {
-    let list = [];
-    for (let i = startNum; i <= endNum; i++) {
-        const fileName = path.join(sourceDir, `${i}.mp3`);
-        if (fs.existsSync(fileName)) {
-            list.push(fileName);
-        } else {
-            throw new Error(`File not found: ${fileName}`);
-        }
+function checkFileExists(sourceDir, fileName) {
+    const filePath = path.join(sourceDir, fileName);
+    if (fs.existsSync(filePath)) {
+        return filePath;
+    } else {
+        throw new Error(`File not found: ${filePath}`);
     }
-    return list;
 }
 
-function compileChapters(sourceDir) {
-    function readChapterPages(filePath) {
+async function compileChapters(sourceDir) {
+    async function readChapterPages(filePath) {
         fs.readFile(filePath, 'utf8', (err, data) => {
             if (err) {
                 console.error("Error reading the JSON file:", err);
@@ -91,7 +87,25 @@ function compileChapters(sourceDir) {
         });
     }
     
-    const chapters = readChapterPages("chapters.json")
+    const chapters = await readChapterPages("chapters.json")
+
+    if (!fs.existsSync(path.join(sourceDir,"chapters"))) {
+        fs.mkdirSync(path.join(sourceDir,"chapters"), { recursive: true });
+    }
+
+
+    Object.entries(chapters).forEach(([chapter, files]) => {
+        const filePaths = files.map(file => path.join(sourceDir,"pages", file));
+        filePaths.forEach(filePath => {
+            if (!fs.existsSync(filePath)) {
+                throw new Error(`File not found: ${filePath}`);
+            }
+        const chapterNumber = chapter.replace(/\D/g, '')
+        combineMP3Files(filePaths, path.join(sourceDir,"chapters", `${chapterNumber}.mp3`));
+    })
+
+    }
+    )
 }
 
 // Example usage:
