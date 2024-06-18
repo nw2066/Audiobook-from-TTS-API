@@ -12,27 +12,27 @@ const execAsync = util.promisify(exec);
  * @param {string} outputPath - Path where the combined MP3 file will be saved.
  */
 
+
 async function combineMP3Files(mp3Files, outputPath) {
-  const fileList = 'fileList.txt';
-  const fileContent = mp3Files.map(file => `file '${file}'`).join('\n');
+  const flattenedMp3Files = mp3Files.flat();
+  const uniqueSuffix = Date.now();
+  const fileList = `fileList_${uniqueSuffix}.txt`;
+
+  const fileContent = flattenedMp3Files.map(file => `file '${path.resolve(file).replace(/\\/g, '/')}'`).join('\n');
 
   try {
-      // Asynchronously write to the file
-      await fs.promises.writeFile(fileList, fileContent);
+      await fs.promises.writeFile(fileList, fileContent, 'utf8');
 
-      // Command to combine MP3 files using ffmpeg
-      const command = `ffmpeg -f concat -safe 0 -i ${fileList} -c copy ${outputPath}`;
+      const command = `ffmpeg -f concat -safe 0 -i ${fileList} -fflags +genpts -acodec libmp3lame -b:a 192k "${outputPath.replace(/\\/g, '/')}"`;
       const { stdout, stderr } = await execAsync(command);
 
       if (stderr) {
           console.error(`stderr: ${stderr}`);
-          return;
       }
       console.log(`MP3 files combined successfully into ${outputPath}`);
   } catch (error) {
       console.error(`Error: ${error.message}`);
   } finally {
-      // Clean up the temporary file asynchronously
       try {
           await fs.promises.unlink(fileList);
       } catch (cleanupError) {
@@ -98,18 +98,17 @@ async function compileChapters(sourceDir) {
     }
 
 
-    Object.entries(chapters).forEach(([chapter, files]) => {
-        const filePaths = files.map(file => path.join(sourceDir,"pages", file));
-        filePaths.forEach(filePath => {
-            if (!fs.existsSync(filePath)) {
-                throw new Error(`File not found: ${filePath}`);
-            }
-        const chapterNumber = chapter.replace(/\D/g, '')
-        combineMP3Files(filePaths, path.join(sourceDir,"chapters", `${chapterNumber}.mp3`));
-    })
+    for (const [chapter, files] of Object.entries(chapters)) {
+      const filePaths = files.map(file => path.join(sourceDir, "pages", file));
+      for (const filePath of filePaths) {
+          if (!fs.existsSync(filePath)) {
+              throw new Error(`File not found: ${filePath}`);
+          }
+      }
 
-    }
-    )
+      const chapterNumber = chapter.replace(/\D/g, '');
+      await combineMP3Files(filePaths, path.join(sourceDir, "chapters", `${chapterNumber}.mp3`));
+  }
 }
 
 // Example usage:
@@ -120,9 +119,9 @@ for (let i = 1; i <= 3; i++) {
     let mp3File = ['temp\\Counter-Clock World (Philip K. Dick)\\pages\\' + i + '.mp3'];
     mp3Files.push(mp3File); 
 }
-combineMP3Files(mp3Files, outputPath);
+//combineMP3Files(mp3Files, outputPath);
 
 //getMP3Duration(outputPath)
 
 
-//compileChapters("temp\\Counter-Clock World (Philip K. Dick)")
+compileChapters("temp\\Counter-Clock World (Philip K. Dick)")
