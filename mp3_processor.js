@@ -3,36 +3,42 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const csv = require('csv-parser');
+const util = require('util');
+const execAsync = util.promisify(exec);
 
 /**
  * Combines multiple MP3 files into a single MP3 file.
  * @param {string[]} mp3Files - Array of paths to MP3 files to be combined.
  * @param {string} outputPath - Path where the combined MP3 file will be saved.
  */
-function combineMP3Files(mp3Files, outputPath) {
-  // Create a temporary text file to store file paths in the format required by ffmpeg
+
+async function combineMP3Files(mp3Files, outputPath) {
   const fileList = 'fileList.txt';
   const fileContent = mp3Files.map(file => `file '${file}'`).join('\n');
-  fs.writeFileSync(fileList, fileContent);
 
-  // Command to combine MP3 files using ffmpeg
-  const command = `ffmpeg -f concat -safe 0 -i ${fileList} -c copy ${outputPath}`;
+  try {
+      // Asynchronously write to the file
+      await fs.promises.writeFile(fileList, fileContent);
 
-  exec(command, (error, stdout, stderr) => {
-    // Clean up the temporary file
-    fs.unlinkSync(fileList);
+      // Command to combine MP3 files using ffmpeg
+      const command = `ffmpeg -f concat -safe 0 -i ${fileList} -c copy ${outputPath}`;
+      const { stdout, stderr } = await execAsync(command);
 
-    if (error) {
+      if (stderr) {
+          console.error(`stderr: ${stderr}`);
+          return;
+      }
+      console.log(`MP3 files combined successfully into ${outputPath}`);
+  } catch (error) {
       console.error(`Error: ${error.message}`);
-      return;
-    }
-    if (stderr) {
-      console.error(`stderr: ${stderr}`);
-      return;
-    }
-    //console.log(`stdout: ${stdout}`);
-    console.log(`MP3 files combined successfully into ${outputPath}`);
-  });
+  } finally {
+      // Clean up the temporary file asynchronously
+      try {
+          await fs.promises.unlink(fileList);
+      } catch (cleanupError) {
+          console.error(`Failed to clean up temporary file: ${cleanupError.message}`);
+      }
+  }
 }
 /**
  * Gets and prints the duration of an MP3 file.
@@ -68,26 +74,24 @@ function checkFileExists(sourceDir, fileName) {
 }
 
 async function compileChapters(sourceDir) {
-    async function readChapterPages(filePath) {
-        fs.readFile(filePath, 'utf8', (err, data) => {
-            if (err) {
-                console.error("Error reading the JSON file:", err);
-                return;
-            }
+    async function readChaptersJSON(filePath) {
+        return new Promise((resolve, reject) => {
+            fs.readFile(filePath, 'utf8', (err, data) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
     
-            // Parse the JSON data
-            const chapters = JSON.parse(data);
-    
-            // Log the chapters and their pages
-            // console.log("Chapters and their pages:");
-            // for (const [chapter, pages] of Object.entries(chapters)) {
-            //     console.log(`${chapter}: ${pages.join(', ')}`);
-            // }
-            return chapters;
+                try {
+                    const chapters = JSON.parse(data);
+                    resolve(chapters);
+                } catch (err) {
+                    reject(err);
+                }
+            });
         });
     }
-    
-    const chapters = await readChapterPages("chapters.json")
+    const chapters = await readChaptersJSON("chapters.json")
 
     if (!fs.existsSync(path.join(sourceDir,"chapters"))) {
         fs.mkdirSync(path.join(sourceDir,"chapters"), { recursive: true });
@@ -109,11 +113,16 @@ async function compileChapters(sourceDir) {
 }
 
 // Example usage:
-const mp3Files = ['temp\\Counter-Clock World (Philip K. Dick)\\pages\\1.mp3', 'temp\\Counter-Clock World (Philip K. Dick)\\pages\\2.mp3'];
 const outputPath = 'comblinedPages.mp3';
 //console.log(getMP3List('temp\\Counter-Clock World (Philip K. Dick)\\pages', 1, 3))
+let mp3Files = [];
+for (let i = 1; i <= 3; i++) {
+    let mp3File = ['temp\\Counter-Clock World (Philip K. Dick)\\pages\\' + i + '.mp3'];
+    mp3Files.push(mp3File); 
+}
+combineMP3Files(mp3Files, outputPath);
 
-//combineMP3Files(mp3Files, outputPath);
 //getMP3Duration(outputPath)
 
-compileChapters("temp\\Counter-Clock World (Philip K. Dick)")
+
+//compileChapters("temp\\Counter-Clock World (Philip K. Dick)")
