@@ -41,28 +41,30 @@ async function combineMP3Files(mp3Files, outputPath) {
   }
 }
 /**
- * Gets and prints the duration of an MP3 file.
+ * Gets the duration of an MP3 file.
  * @param {string} filePath - Path to the MP3 file.
+ * @returns {Promise<string>} - A promise that resolves with the duration of the MP3 file.
  */
-function getMP3Duration(filePath) {
-    const command = `ffmpeg -i ${filePath} -f null -`;
-  
+async function getMP3Duration(filePath) {
+  const command = `ffmpeg -i ${filePath} -f null -`;
+
+  return new Promise((resolve, reject) => {
     exec(command, (error, stdout, stderr) => {
       if (error) {
-        console.error(`Error: ${error.message}`);
+        reject(`Error: ${error.message}`);
         return;
       }
       // Extract duration from the stderr output
       const match = /Duration: (\d{2}:\d{2}:\d{2}\.\d{2})/.exec(stderr);
       if (match) {
-        //console.log(`Duration of the combined MP3 file: ${match[1]}`);
-        return match;
+        resolve(match[1]);
       } else {
-        console.error('Failed to retrieve MP3 duration.');
+        reject('Failed to retrieve MP3 duration.');
       }
     });
-    return match;
+  });
 }
+
 
 function checkFileExists(sourceDir, fileName) {
     const filePath = path.join(sourceDir, fileName);
@@ -111,6 +113,32 @@ async function compileChapters(sourceDir) {
   }
 }
 
+async function compileChunks(sourceDir, start=1, end=1000) {
+    const chaptersDir = path.join(sourceDir, 'chapters');
+    const outputDir = path.join('output');
+
+    if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir);
+    }
+
+    let totalDuration = 0;
+    let combinedChapters = [];
+    for (let i = start; i < end && i < chapters.length; i++) {
+        const chapter = chapters[i];
+        const duration = await getMP3Duration(chapter);
+        combinedChapters.push(chapter);
+        totalDuration += parseFloat(duration[1]);
+    }
+
+    if (combinedChapters.length > 0) {
+        const outputFile = path.join(outputDir, `output_${start}_${end}.mp3`);
+        await combineMP3Files(combinedChapters, outputFile);
+        console.log(`Combined chapters from ${start} to ${end} into ${outputFile}`);
+    } else {
+        console.log(`No chapters found between ${start} and ${end}`);
+    }
+}
+
 // Example usage:
 const outputPath = 'comblinedPages.mp3';
 //console.log(getMP3List('temp\\Counter-Clock World (Philip K. Dick)\\pages', 1, 3))
@@ -120,8 +148,13 @@ for (let i = 1; i <= 3; i++) {
     mp3Files.push(mp3File); 
 }
 //combineMP3Files(mp3Files, outputPath);
+(async () => {
+  try {
+    const duration = await getMP3Duration('output\\test.mp3');
+    console.log(`Duration of the MP3 file: ${duration}`);
+  } catch (error) {
+    console.error(error);
+  }
+})();
 
-//getMP3Duration(outputPath)
-
-
-compileChapters("temp\\Counter-Clock World (Philip K. Dick)")
+//compileChapters("temp\\Counter-Clock World (Philip K. Dick)")
