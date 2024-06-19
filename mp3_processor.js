@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const csv = require('csv-parser');
 const util = require('util');
+const { start } = require('repl');
 const execAsync = util.promisify(exec);
 
 /**
@@ -40,13 +41,31 @@ async function combineMP3Files(mp3Files, outputPath) {
       }
   }
 }
+
+/**
+ * Converts a time string (HH:MM:SS.SS) to milliseconds.
+ * @param {string} time - The time string to convert.
+ * @returns {number} - The time in milliseconds.
+ */
+function timeToMilliseconds(time) {
+  const [hours, minutes, seconds] = time.split(':');
+  const [sec, ms] = seconds.split('.');
+
+  return (
+    parseInt(hours, 10) * 60 * 60 * 1000 +
+    parseInt(minutes, 10) * 60 * 1000 +
+    parseInt(sec, 10) * 1000 +
+    parseInt(ms, 10) * 10
+  );
+}
+
 /**
  * Gets the duration of an MP3 file.
  * @param {string} filePath - Path to the MP3 file.
  * @returns {Promise<string>} - A promise that resolves with the duration of the MP3 file.
  */
 async function getMP3Duration(filePath) {
-  const command = `ffmpeg -i ${filePath} -f null -`;
+  const command = `ffmpeg -i "${filePath}" -f null -`;
 
   return new Promise((resolve, reject) => {
     exec(command, (error, stdout, stderr) => {
@@ -57,7 +76,8 @@ async function getMP3Duration(filePath) {
       // Extract duration from the stderr output
       const match = /Duration: (\d{2}:\d{2}:\d{2}\.\d{2})/.exec(stderr);
       if (match) {
-        resolve(match[1]);
+        const durationInMilliseconds = timeToMilliseconds(match[1]);
+        resolve(durationInMilliseconds);
       } else {
         reject('Failed to retrieve MP3 duration.');
       }
@@ -113,32 +133,73 @@ async function compileChapters(sourceDir) {
   }
 }
 
-async function compileChunks(sourceDir, start=1, end=1000) {
-    const chaptersDir = path.join(sourceDir, 'chapters');
-    const outputDir = path.join('output');
+/**
+ * Compiles chapters into chunks of less than the target duration.
+ * @param {string} sourceDir - Directory containing the source MP3 files.
+ * @param {number} targetDuration - Target duration for each chunk in milliseconds.
+ * @param {number} start - Start index for chapters.
+ * @param {number} end - End index for chapters.
+ * @returns {Promise<void>}
+ */
+async function compileChunks(sourceDir,outputDir = 'output', targetDuration = 3900000, start = 1, end = 1000) {
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir);
+  }
 
-    if (!fs.existsSync(outputDir)) {
-        fs.mkdirSync(outputDir);
-    }
+  let totalDuration = 0;
+  let combinedChapters = [];
+  let chunkIndex = 1;
+  let lastChapter = start;
 
-    let totalDuration = 0;
-    let combinedChapters = [];
-    for (let i = start; i < end && i < chapters.length; i++) {
-        const chapter = chapters[i];
-        const duration = await getMP3Duration(chapter);
-        combinedChapters.push(chapter);
-        totalDuration += parseFloat(duration[1]);
-    }
-
-    if (combinedChapters.length > 0) {
-        const outputFile = path.join(outputDir, `output_${start}_${end}.mp3`);
+  for (let i = start; i <= end; i++) {
+    const chapterPath = path.join(sourceDir, "chapters",`${i}.mp3`);
+    if (!fs.existsSync(chapterPath)) {
+      console.log(`Chapter ${i} does not exist`);
+      if (combinedChapters.length > 0) {
+        const outputFile = path.join(outputDir, path.basename(sourceDir)+`_chapter${lastChapter}-${i-1}.mp3`);
+        lastChapter = i;
         await combineMP3Files(combinedChapters, outputFile);
-        console.log(`Combined chapters from ${start} to ${end} into ${outputFile}`);
-    } else {
-        console.log(`No chapters found between ${start} and ${end}`);
+        console.log(`Combined chapters into ${outputFile}`);
+      }
+
+      return;
     }
+    let duration;
+    try {
+      duration = await getMP3Duration(chapterPath);
+      console.log(`Duration of the MP3 file: ${duration}`);
+    } catch (error) {
+      console.error(error)
+      throw error;
+    }
+
+
+    if (totalDuration + duration > targetDuration && combinedChapters.length > 0) {
+      const outputFile = path.join(outputDir, path.basename(sourceDir)+`_chapter${lastChapter}-${i-1}.mp3`);
+      lastChapter = i;
+      await combineMP3Files(combinedChapters, outputFile);
+      console.log(`Combined chapters into ${outputFile}`);
+
+      combinedChapters = [];
+      totalDuration = 0;
+      chunkIndex++;
+    }
+
+    combinedChapters.push(chapterPath);
+    totalDuration += duration;
+  }
+
+
 }
 
+// Usage example
+(async () => {
+  try {
+    await compileChunks('path/to/sourceDir', 3600000, 1, 1000);
+  } catch (error) {
+    console.error(error);
+  }
+})()
 // Example usage:
 const outputPath = 'comblinedPages.mp3';
 //console.log(getMP3List('temp\\Counter-Clock World (Philip K. Dick)\\pages', 1, 3))
@@ -148,13 +209,15 @@ for (let i = 1; i <= 3; i++) {
     mp3Files.push(mp3File); 
 }
 //combineMP3Files(mp3Files, outputPath);
-(async () => {
-  try {
-    const duration = await getMP3Duration('output\\test.mp3');
-    console.log(`Duration of the MP3 file: ${duration}`);
-  } catch (error) {
-    console.error(error);
-  }
-})();
+// (async () => {
+//   try {
+//     const duration = await getMP3Duration('output\\test.mp3');
+//     console.log(`Duration of the MP3 file: ${duration}`);
+//   } catch (error) {
+//     console.error(error);
+//   }
+// })();
 
 //compileChapters("temp\\Counter-Clock World (Philip K. Dick)")
+
+compileChunks("temp\\Counter-Clock World (Philip K. Dick)",undefined, undefined ,20)
