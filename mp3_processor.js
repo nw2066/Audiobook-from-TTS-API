@@ -7,6 +7,11 @@ const util = require('util');
 const { start } = require('repl');
 const execAsync = util.promisify(exec);
 
+
+const {
+  getInputPath
+} = require('./pdf_processor.js');
+
 /**
  * Combines multiple MP3 files into a single MP3 file.
  * @param {string[]} mp3Files - Array of paths to MP3 files to be combined.
@@ -193,13 +198,13 @@ async function compileChunks(sourceDir,outputDir = 'output', targetDuration = 39
 }
 
 // Usage example
-(async () => {
-  try {
-    await compileChunks('path/to/sourceDir', 3600000, 1, 1000);
-  } catch (error) {
-    console.error(error);
-  }
-})()
+// (async () => {
+//   try {
+//     await compileChunks('path/to/sourceDir', 3600000, 1, 1000);
+//   } catch (error) {
+//     console.error(error);
+//   }
+// })()
 // Example usage:
 const outputPath = 'comblinedPages.mp3';
 //console.log(getMP3List('temp\\Counter-Clock World (Philip K. Dick)\\pages', 1, 3))
@@ -217,7 +222,8 @@ for (let i = 1; i <= 3; i++) {
 //     console.error(error);
 //   }
 // })();
+sourcePath = path.join("temp",path.basename( getInputPath(),'.pdf'))
 
-//compileChapters("temp\\Counter-Clock World (Philip K. Dick)")
+//compileChapters(sourcePath)
 
-compileChunks("temp\\Counter-Clock World (Philip K. Dick)",undefined, undefined ,20)
+compileChunks(sourcePath)

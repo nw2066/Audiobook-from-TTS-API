@@ -57,7 +57,7 @@ const testCode = async () => {
 // console.group(pageplace);
 // console.log(await getMP3FromPage(pageplace,"pages"))
 
-    getMP3Pages(getInputPath(),1,2)
+    getMP3Pages(getInputPath(),1,300)
 
 }
 
